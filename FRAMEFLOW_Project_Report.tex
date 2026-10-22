@@ -1,0 +1,448 @@
+\documentclass[12pt,a4paper,oneside]{report}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{longtable}
+\setstretch{1.35}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\newcommand{\optionalfigure}[3]{\begin{figure}[H]\centering\IfFileExists{\detokenize{#1}}{\includegraphics[width=0.88\textwidth]{\detokenize{#1}}}{\fbox{\parbox[c][4cm][c]{0.82\textwidth}{\centering Figure placeholder\\[4pt]Upload \texttt{#1} to Overleaf to display this figure.}}}\caption{#2}\label{#3}\end{figure}}
+\begin{document}
+
+% ---------------- COVER PAGE ----------------
+\begin{titlepage}
+\centering
+\IfFileExists{cbit_logo.png}{\includegraphics[width=2.5cm]{cbit_logo.png}\\[0.25cm]}{\vspace*{0.2cm}}
+{\Large\bfseries CHAITANYA BHARATHI INSTITUTE OF TECHNOLOGY (A)}\\[0.15cm]
+{\large Gandipet, Hyderabad, Telangana -- 500075}\\[0.55cm]
+{\large Department of Electronics and Communication Engineering}\\[0.9cm]
+\rule{\textwidth}{1.2pt}\\[0.35cm]
+{\Large\bfseries DIGITAL SIGNAL PROCESSING LABORATORY}\\[0.2cm]
+{\large Subject Code: 22ECC20}\\[0.6cm]
+{\Huge\bfseries FRAMEFLOW}\\[0.35cm]
+{\LARGE\bfseries Interactive Analysis of Temporal Sampling, Aliasing, and Frame Reconstruction in Digital Video}\\[0.7cm]
+{\Large PROJECT REPORT}\\[0.85cm]
+\begin{tabular}{>{\bfseries}rl}
+Submitted by: & ALIEYA FIRDOUS\\
+Roll Number: & 1601-24-735-001\\
+Academic Year: & 2026--2027\\
+\end{tabular}\\[0.8cm]
+{\large\bfseries Under the Supervision of}\\[0.15cm]
+{\Large Dr. D. Bhaskar}\\[0.65cm]
+\vfill
+{\large Chaitanya Bharathi Institute of Technology (A)}\\
+{\large Hyderabad -- 500075, Telangana, India}\\[0.2cm]
+\rule{\textwidth}{1.2pt}
+\end{titlepage}
+
+\pagenumbering{roman}
+\chapter*{Declaration}
+I hereby present this report titled \textit{“FRAMEFLOW: Interactive Analysis of Temporal Sampling, Aliasing, and Frame Reconstruction in Digital Video”} as a record of the digital signal processing laboratory project carried out using MATLAB. The report describes the problem, theoretical background, implementation workflow, generated outputs, and the methods intended for evaluation. The software outputs and numerical results should be interpreted according to the experiments actually executed and the files available for inspection. Any placeholder values or figure boxes in this editable draft must be replaced or removed before final submission.
+
+\vspace{1cm}
+\textbf{Student:} ALIEYA FIRDOUS\\
+\textbf{Roll Number:} 1601-24-735-001\\[1cm]
+\textbf{Signature:} \rule{5cm}{0.4pt} \hfill \textbf{Date:} \rule{3cm}{0.4pt}
+
+\chapter*{Acknowledgement}
+I express my sincere gratitude to my project supervisor, Dr. D. Bhaskar, for the guidance and academic support provided for this Digital Signal Processing Laboratory project. I also thank the Department of Electronics and Communication Engineering at Chaitanya Bharathi Institute of Technology (A), Hyderabad, for providing the academic setting in which the project was undertaken. The project helped connect classroom topics such as discrete-time sampling, reconstruction, and error measurement to a practical visual signal. I am grateful for the learning resources and software tools that made it possible to develop and inspect the MATLAB implementation.
+
+\chapter*{Abstract}
+Digital video represents a changing scene as a sequence of image frames sampled at discrete time intervals. The temporal sampling rate affects how motion is represented: retaining fewer frames reduces temporal information and may make movement appear discontinuous. This project, titled \textit{FRAMEFLOW: Interactive Analysis of Temporal Sampling, Aliasing, and Frame Reconstruction in Digital Video}, demonstrates temporal frame sampling and compares two elementary reconstruction methods using MATLAB. A source video is read incrementally, and selected frames are retained according to a sampling factor to create a temporally downsampled sequence. The sampled sequence is then used to demonstrate Zero-Order Hold (ZOH), which repeats the most recently retained frame, and linear interpolation, which estimates intermediate frames by blending adjacent retained frames. The project produces video outputs and supporting plots or data files for visual inspection. Mean Squared Error (MSE) can be used as a quantitative measure of pixel-wise difference between an original sequence and a reconstructed sequence, provided that the compared frames are temporally aligned and have matching dimensions. The implementation is designed to process frames incrementally to reduce memory use in an online MATLAB environment. The work links DSP concepts to a familiar signal and illustrates the trade-off between temporal detail, computational simplicity, and reconstruction quality. Numerical conclusions are intentionally left dependent on verification of the final frame alignment and saved result tables; no unverified values are asserted in this report.
+
+\textbf{Keywords:} Digital Signal Processing, Temporal Sampling, Video Reconstruction, Zero-Order Hold, Linear Interpolation, Aliasing, Mean Squared Error, MATLAB.
+
+\tableofcontents
+\listoffigures
+\listoftables
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+\section{Background}
+Digital Signal Processing (DSP) provides methods for representing, analysing, modifying, and reconstructing signals in discrete form. A signal may vary with time, space, or another independent variable. Audio is commonly represented as a sequence of samples over time; an image is a two-dimensional array of pixel values; and a digital video is a time-ordered sequence of images. Video is therefore a useful example for understanding how sampling decisions influence a signal.
+
+A video frame captures the visible scene at one instant. The frame rate specifies how many frames are presented per second. A higher frame rate can describe changes in motion more densely, while a lower frame rate preserves fewer temporal observations. When frames are discarded, information about the scene between retained instants is no longer directly available. Reconstruction algorithms can estimate intermediate frames, but estimates are not equivalent to measurements of the original scene.
+
+\section{Project Overview}
+FRAMEFLOW is a MATLAB-based educational demonstration that takes a source video and creates a sampled sequence and reconstructed versions. The principal comparison is between Zero-Order Hold and linear interpolation. ZOH repeats a retained frame over an interval; linear interpolation blends two retained frames to create intermediate images. The output videos can be watched side by side or examined frame by frame.
+
+The name FRAMEFLOW combines “frame,” the basic unit of digital video, with “flow,” referring to the perceived continuity of motion. The project focuses on temporal sampling rather than spatial image resizing. The main objective is to make a signal-processing operation visible and measurable.
+
+\section{Motivation}
+Sampling is often first taught through one-dimensional waveforms. The same principle can be less intuitive when the signal is a sequence of images. Video makes the effect immediate: repeated or missing frames change the appearance of movement, even when each individual frame is visually clear. This makes the project useful for explaining sampling, reconstruction, and the limitations of estimation.
+
+\section{Problem Statement}
+Temporal downsampling removes frames from a video sequence and reduces the amount of observed motion information. The project investigates how a reduced sequence can be represented at a higher playback rate using simple reconstruction methods, and how the original, sampled, and reconstructed outputs can be compared visually and quantitatively.
+
+\section{Objectives}
+\begin{enumerate}[leftmargin=*]
+\item Read a source video and identify its basic properties.
+\item Perform temporal sampling by retaining frames at selected intervals.
+\item Save a sampled video for direct visual comparison.
+\item Implement or demonstrate Zero-Order Hold reconstruction.
+\item Implement or demonstrate linear interpolation between retained frames.
+\item Generate plots or tables that document frame counts and reconstruction comparisons.
+\item Explain the relationship between sampling factor, temporal detail, and reconstruction artifacts.
+\item Use MSE only after verifying temporal alignment and compatible image dimensions.
+\item Build a reproducible MATLAB workflow suitable for an online environment with limited memory.
+\end{enumerate}
+
+\section{Scope and Boundaries}
+This project is a software experiment using an existing video file and MATLAB. It studies frame selection and two basic reconstruction methods. It does not implement object tracking, optical flow, neural video interpolation, motion-compensated reconstruction, or a complete anti-aliasing pipeline. The quality of the demonstration depends on the input video, selected sampling factor, output frame rate, and the correctness of frame correspondence during evaluation.
+
+\chapter{Digital Video as a Discrete-Time Signal}
+\section{Representation of a Video}
+Let a video sequence be denoted by $x[n]$, where $n$ is a non-negative integer frame index. Each $x[n]$ is an image containing pixel values at spatial coordinates. A colour frame may contain red, green, and blue channels; a grayscale frame contains one intensity channel. In implementation, a frame is typically represented by a matrix or a three-dimensional array.
+
+The time associated with frame $n$ depends on the original frame rate $F_v$. Under a constant-frame-rate assumption, the approximate timestamp is
+\[
+t_n = \frac{n}{F_v}.
+\]
+For example, if a video is recorded at a nominal frame rate of 30 frames per second, consecutive frame timestamps are approximately $1/30$ second apart. This example explains the relationship only; the actual frame rate must be read from the input file rather than assumed.
+
+\section{Spatial and Temporal Information}
+Spatial information describes the contents of each individual frame, such as edges, colours, textures, and object positions. Temporal information describes how these contents change between frames. FRAMEFLOW primarily changes temporal sampling. The spatial dimensions of retained frames should remain unchanged unless a separate resizing operation is intentionally introduced.
+
+\section{Frame Rate and Playback}
+The playback frame rate determines how quickly the stored frames are displayed. It is important to distinguish the number of stored frames from the frame rate at which they are played. A sampled file may contain fewer frames, but if it is played at the same frame rate as the original, its duration may be shorter. Alternatively, a reconstruction may repeat or estimate frames to maintain a chosen output duration. The report should describe which convention the implementation uses.
+
+\section{Why Video is a Useful DSP Example}
+Video makes the consequences of sampling visible. If an object moves a large distance between retained frames, the missing intermediate positions cannot be observed directly. Repeating the last frame creates a stationary appearance followed by a jump. Blending adjacent frames creates a gradual visual transition but may blur objects or produce ghost-like mixtures. These effects help distinguish interpolation from genuine recovery of lost information.
+
+\chapter{Theoretical Background}
+\section{Temporal Sampling}
+Temporal downsampling by a positive integer factor $M$ retains a subset of the original frames. A compact mathematical description is
+\[
+x_s[k] = x[kM], \qquad k=0,1,2,\ldots
+\]
+where $x_s[k]$ is the sampled sequence. The precise first retained frame depends on whether the program uses zero-based mathematical indexing or one-based MATLAB indexing. For example, a MATLAB loop may retain frames 1, $1+M$, $1+2M$, and so on. This convention must be stated consistently when comparing frame indices.
+
+A larger value of $M$ means fewer frames are retained. It can reduce storage and processing requirements, but it also discards more temporal observations. A smaller $M$ retains more frames and stays closer to the original sequence, at the cost of less reduction.
+
+\section{Sampling Factor and Effective Rate}
+If the original frame rate is $F_v$ and every $M$-th frame is retained, the approximate effective sampling rate is
+\[
+F_s = \frac{F_v}{M}.
+\]
+This relation assumes a constant original frame rate and uniform frame selection. If a source file uses variable frame timing or if frames are skipped irregularly, the relationship is only an approximation. The MATLAB output metadata and actual frame selection should be checked before reporting a numerical rate.
+
+\section{Zero-Order Hold Reconstruction}
+Zero-Order Hold (ZOH) keeps the most recently available sample constant until a new sample is encountered. For a frame sequence, the reconstruction repeats each retained image for the interval associated with that sample. A simplified expression is
+\[
+\hat{x}_{\mathrm{ZOH}}[n] = x_s\!\left[\left\lfloor\frac{n}{M}\right\rfloor\right],
+\]
+with index adjustments according to the implementation. The method is computationally simple because it does not need to calculate new pixel values. However, repeated images may cause visible pauses followed by jumps in moving scenes.
+
+\section{Linear Interpolation}
+Linear interpolation estimates a value between two known samples by taking a weighted combination of them. If $A$ and $B$ are two adjacent retained frames, an intermediate frame is
+\[
+\hat{x}_{\mathrm{lin}} = (1-\alpha)A + \alpha B, \qquad 0\leq\alpha\leq1.
+\]
+The weight $\alpha$ indicates the relative position between the two samples. At $\alpha=0$, the result is $A$; at $\alpha=1$, the result is $B$; values between zero and one produce blends. In image processing, the operation is applied to corresponding pixel positions and colour channels.
+
+Linear interpolation often looks smoother than repeating a frame, but it does not understand object motion. If an object changes position between samples, blending may show it in both positions at once. This is a limitation of simple pixel-wise interpolation and should not be interpreted as a coding error by itself.
+
+\section{Aliasing in Time}
+Aliasing occurs when a sampled signal does not contain enough temporal information to represent its changes faithfully. In video, insufficient temporal sampling may create motion judder, incorrect apparent movement, or missed events. The exact visual artifact depends on the scene, motion speed, exposure, and sampling pattern. FRAMEFLOW demonstrates the loss of temporal detail caused by frame removal; it does not claim to solve all forms of temporal aliasing.
+
+\section{Mean Squared Error}
+For an original set of aligned pixel values $x_i$ and reconstructed values $\hat{x}_i$, the mean squared error is
+\[
+\mathrm{MSE}=\frac{1}{N}\sum_{i=1}^{N}(x_i-\hat{x}_i)^2,
+\]
+where $N$ is the number of scalar pixel values included in the calculation. For RGB images, the calculation may include all three channels. A lower MSE indicates a smaller average squared pixel difference for the specific frames being compared. MSE is not a complete measure of perceived video quality: it does not fully represent motion smoothness, semantic content, or human visual sensitivity.
+
+\section{Conditions for a Fair MSE Comparison}
+A valid MSE comparison requires that the reference and reconstructed frames correspond to the same timestamps, use the same spatial dimensions, and use compatible pixel scaling and colour representations. If the reconstructed frame at index $n$ is compared with an original frame from a different time, the computed error may reflect motion displacement rather than reconstruction quality. The frame alignment method should therefore be documented, and the numerical output should be inspected for indexing mistakes before being included as a final result.
+
+\chapter{System Design and Workflow}
+\section{System Overview}
+The FRAMEFLOW processing chain consists of a video input, frame reading, temporal sampling, reconstruction, output writing, and result analysis. The source file is read frame by frame to avoid storing the complete video in memory. The selected frames are used to form the sampled output and to generate the reconstruction videos. Separate plots and tables can document frame counts and error measures.
+
+\begin{enumerate}[leftmargin=*]
+\item Input: a digital video file, such as \texttt{street.mp4}.
+\item Read: obtain frames sequentially using MATLAB video-reading functionality.
+\item Sample: retain frames according to a fixed sampling factor.
+\item Reconstruct: repeat retained frames for ZOH and blend adjacent retained frames for linear interpolation.
+\item Write: save the output sequences as video files.
+\item Analyse: create comparison plots, tables, and optional MSE summaries.
+\item Verify: confirm that output videos play and that quantitative comparisons use aligned frames.
+\end{enumerate}
+
+\section{Functional Requirements}
+The program should read a supported video file, apply a consistent sampling rule, produce output files, and handle the final partial interval without accessing a frame that does not exist. It should close video-writing objects properly so files are finalized. It should also provide clear names for output files so the original, sampled, and reconstructed versions can be distinguished.
+
+\section{Non-Functional Requirements}
+The workflow should be understandable, reproducible, and reasonably memory efficient. Processing one frame at a time is preferable to loading a long video into a large cell array. Output names should be descriptive. Numerical results should be reproducible from saved data or documented code. A report should not present an error metric as a verified finding until the frame indexing and calculation have been checked.
+
+\section{Data Flow}
+The source video is the reference input. The sampling stage selects a subset of frames. The reconstruction stage converts the sparse temporal sequence into a sequence suitable for playback. The evaluation stage compares selected output frames with corresponding reference frames. Visual outputs and tables serve different purposes: videos show perceptual changes, while plots and numerical metrics summarise selected properties.
+
+\chapter{MATLAB Implementation}
+\section{Development Environment}
+The project was developed in MATLAB Online. The workflow is intended to operate in an environment where available memory and session resources may be limited. Consequently, the video should be read incrementally rather than loaded entirely into memory. The final report should record the MATLAB version shown in the user's environment and the date on which the final outputs were produced.
+
+\section{Input Video Handling}
+The program begins by opening the chosen video file and obtaining metadata such as frame rate, dimensions, and duration when available. Metadata is useful for understanding the sampling factor and checking whether output duration is expected. Input validation should ensure that the file exists and that the video reader can decode it.
+
+\section{Frame Selection}
+The sampling operation retains frames according to a fixed interval. A reliable implementation should use one clear indexing convention and apply it consistently. The first retained frame is usually the first frame of the input, followed by frames separated by the sampling interval. The final group may contain fewer than the full number of frames, so the code must not assume every interval has exactly $M$ frames.
+
+\section{Output Video Writing}
+The writer is configured with a supported video profile and a chosen output frame rate. In the current MATLAB Online environment, the Motion JPEG AVI profile was found to be compatible, while an MPEG-4 profile was not accepted in the earlier attempt. The final output format should match the files actually generated. Each writer should be closed after all frames have been written; otherwise the resulting file may be incomplete or unreadable.
+
+\section{ZOH Reconstruction Procedure}
+For each interval between retained frames, ZOH writes the earlier retained frame repeatedly until the next retained frame is reached. The method does not calculate new image content. The number of repetitions must be consistent with the sampling factor and the intended output duration. Boundary handling is required for the last retained frame and for any incomplete interval at the end of the source video.
+
+\section{Linear Reconstruction Procedure}
+For each pair of neighbouring retained frames, the program calculates intermediate blends using increasing values of $\alpha$. Pixel arithmetic should be performed using a numeric type that avoids unintended integer truncation during the blend; the result can then be converted back to a valid image type. The implementation must ensure that both source frames have matching dimensions and channel counts.
+
+\section{Memory Management}
+A prior implementation attempt that loaded every frame into a cell array caused MATLAB Online to run out of resources or crash. The safer approach is to process frames incrementally and write outputs as the processing progresses. Where a method requires access to adjacent retained frames, only the small number of frames needed for the current interpolation interval should be retained. This reduces peak memory usage and makes the workflow more suitable for online execution.
+
+\section{File Organisation}
+The project workspace includes the source video and generated artefacts. The files created during the project include the original or reference video, sampled output, ZOH reconstruction, linear reconstruction, plots, CSV tables, and MAT data files. The exact set of files in the final submission should be checked against the actual MATLAB workspace before the report is submitted.
+
+\chapter{Experimental Procedure}
+\section{Preparation}
+The source video is placed in the MATLAB working folder and its name is set in the script. Before running the full experiment, the script should be checked for correct file paths, output names, and a supported writer profile. A short test run can verify that the video reader and writer work as expected. The complete experiment should then be run once and the generated files inspected.
+
+\section{Sampling Experiment}
+The temporal sampling factor is selected in the script. The video is read sequentially and only frames meeting the sampling rule are retained. The sampled sequence is written to a separate file. The original and sampled videos are then played to observe the change in motion continuity and duration. Any comparison should note whether the sampled file uses the original playback rate or an adjusted playback rate.
+
+\section{ZOH Experiment}
+The retained frames are used to generate a reconstructed sequence in which each retained frame is held over its corresponding interval. The output is saved as a separate AVI file. During inspection, attention is paid to repeated frames, visible pauses, and jumps between object positions.
+
+\section{Linear Interpolation Experiment}
+Adjacent retained frames are blended to estimate intermediate frames. The resulting sequence is saved separately from the ZOH output. The reconstructed video is watched for smoother transitions, blur, ghosting, or other visible artifacts. It is important to state that the method estimates pixel values and does not recover unknown scene information with certainty.
+
+\section{Visual Comparison}
+The original, sampled, ZOH, and linear outputs are compared using the same playback conditions where possible. The comparison should consider motion continuity, sharpness of individual frames, repeated-frame behaviour, and obvious interpolation artifacts. A single still frame may not capture the temporal differences, so viewing the sequences is a necessary part of the evaluation.
+
+\section{Quantitative Comparison}
+If MSE is calculated, the selected frames should be aligned by timestamp or by a documented mapping from reconstructed frames to original frames. The calculation should be checked against a small hand-inspected example or a known identical-frame comparison. If the output table contains suspicious values, frame indexing and data-type conversion should be investigated before reporting results. This report intentionally leaves the final numerical table to be populated from verified output.
+
+\chapter{Results and Output Artefacts}
+\section{Generated Videos}
+The project workspace has been reported to contain the following video outputs. The names below should be checked against the current MATLAB folder before submission.
+\begin{table}[H]
+\centering
+\caption{Expected video artefacts in the project workspace}
+\begin{tabular}{p{0.43\textwidth}p{0.46\textwidth}}
+\toprule
+\textbf{File} & \textbf{Purpose}\\
+\midrule
+\texttt{street.mp4} & Source video used as input\\
+\texttt{FRAMEFLOW\_Sampled.avi} & Temporally downsampled sequence\\
+\texttt{FRAMEFLOW\_ZOH\_Reconstructed.avi} & Reconstruction using repeated frames\\
+\texttt{FRAMEFLOW\_Linear\_Reconstructed.avi} & Reconstruction using linear blending\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Generated Plots and Data}
+The project workspace has also been reported to include comparison plots, CSV tables, and MAT data files. These artefacts can document frame counts, sampling effects, and reconstruction errors. Their contents should be opened and checked before making specific claims about the measured outcomes.
+\begin{table}[H]
+\centering
+\caption{Analysis artefacts reported for FRAMEFLOW}
+\begin{tabular}{p{0.48\textwidth}p{0.42\textwidth}}
+\toprule
+\textbf{File or file group} & \textbf{Intended use}\\
+\midrule
+\texttt{FRAMEFLOW\_Original\_vs\_Sampled.png} & Visual comparison of original and sampled outputs\\
+\texttt{FRAMEFLOW\_FrameCount\_Comparison.png} & Comparison of frame counts\\
+\texttt{FRAMEFLOW\_Reconstruction\_MSE.png} & MSE comparison, after validation\\
+\texttt{FRAMEFLOW\_Sampling\_Results.csv} & Sampling result table\\
+\texttt{FRAMEFLOW\_Reconstruction\_Results.csv} & Reconstruction result table\\
+\texttt{FRAMEFLOW\_Sampling\_Data.mat} & Saved sampling data\\
+\texttt{FRAMEFLOW\_Reconstruction\_Data.mat} & Saved reconstruction data\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]\centering\fbox{\parbox[c][4cm][c]{0.82\textwidth}{\centering Upload the original-versus-sampled plot here.}}\caption{Original and temporally sampled video comparison.}\label{fig:originalsampled}\end{figure}
+\begin{figure}[H]\centering\fbox{\parbox[c][4cm][c]{0.82\textwidth}{\centering Upload the frame-count comparison plot here.}}\caption{Frame-count comparison generated by the analysis script.}\label{fig:framecounts}\end{figure}
+\begin{figure}[H]\centering\fbox{\parbox[c][4cm][c]{0.82\textwidth}{\centering Upload the verified reconstruction-error plot here.}}\caption{Reconstruction error plot; include only after verifying the MSE calculation.}\label{fig:mse}\end{figure}
+
+\section{Frame Count Interpretation}
+The sampled video should generally contain fewer stored frames than the original when the sampling factor is greater than one. The exact count depends on the source length and indexing convention. If the reconstruction expands the sampled sequence to a target duration, the output frame count may increase again because frames are repeated or estimated. The frame-count plot should be interpreted with these distinctions in mind.
+
+\section{Visual Observations to Record}
+The final report should record observations that can be directly confirmed by watching the generated videos. Suggested items include whether the sampled video appears less continuous, whether ZOH creates repeated still intervals, whether linear interpolation appears smoother, and whether blending creates blur or ghosting around moving objects. Only observations that are actually visible in the user's video should be retained in the final version.
+
+\section{Quantitative Results Table}
+The following table is intentionally provided as a template. Enter measured values from the verified CSV or MATLAB output. Do not submit the bracketed placeholders as numerical findings.
+\begin{table}[H]
+\centering
+\caption{Verified reconstruction metrics (complete before submission)}
+\begin{tabular}{p{0.38\textwidth}p{0.22\textwidth}p{0.25\textwidth}}
+\toprule
+\textbf{Sequence} & \textbf{Frame count} & \textbf{MSE vs. aligned original}\\
+\midrule
+Original reference & [enter value] & 0 for self-comparison\\
+Sampled sequence & [enter value] & [verify alignment]\\
+ZOH reconstruction & [enter value] & [enter verified value]\\
+Linear reconstruction & [enter value] & [enter verified value]\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Discussion}
+\section{What Temporal Sampling Demonstrates}
+The sampling experiment demonstrates that video contains both spatial and temporal information. Retaining selected frames preserves the contents of those frames but removes observations between them. The resulting sequence may still contain sharp images, yet the motion described by the sequence becomes less detailed. This illustrates why image sharpness alone is not enough to judge a video sequence.
+
+\section{ZOH Versus Linear Interpolation}
+ZOH has a clear conceptual advantage: its output values come directly from retained frames. It is simple, predictable, and computationally inexpensive. Its main limitation is that a moving object may remain frozen at one location until the next retained frame appears. This step-like behaviour makes the temporal sampling interval obvious to the viewer.
+
+Linear interpolation creates intermediate pixel values and may produce a more gradual visual transition. However, a blend is not necessarily a physically correct frame of the scene. A moving object can appear translucent or duplicated because the same pixel position is blended across two different object locations. The method may therefore improve apparent continuity in some scenes while introducing blur in others. Which method appears preferable depends on the content and on the criterion used for comparison.
+
+\section{Interpreting MSE Carefully}
+MSE is useful because it converts pixel-wise differences into a scalar value that can be plotted and compared. Nevertheless, the metric must be interpreted carefully. A small temporal misalignment can create a large error in a moving scene even when the reconstruction looks reasonable. Similarly, a pixel-wise blend may reduce average intensity differences without accurately reproducing the shape or motion of an object. MSE should therefore supplement, not replace, visual inspection.
+
+\section{Limitations of the Experiment}
+The project uses basic reconstruction methods and a single input video unless additional experiments are deliberately run. Results can depend strongly on the scene's motion, the sampling factor, compression artifacts, and frame-rate metadata. The project does not use motion vectors or optical flow to track objects. It also does not guarantee that interpolation will improve every objective or perceptual measure. These boundaries should be stated clearly when presenting the project.
+
+\section{Reproducibility}
+A reproducible experiment records the input file, sampling factor, source frame rate, output frame rate, method settings, and the names of the generated files. Code should use consistent indexing and close all writers. Quantitative results should be regenerated from the same saved outputs and checked for alignment. These steps make the report easier to review and allow another student to repeat the experiment.
+
+\chapter{Applications and Relevance}
+\section{Video Compression and Storage}
+Reducing temporal samples can reduce the number of stored frames and may lower processing requirements in simple workflows. Practical video compression is more sophisticated than dropping frames, because modern codecs exploit spatial and temporal redundancy. Even so, the FRAMEFLOW demonstration helps explain the general relationship between the amount of temporal information retained and the quality of the resulting playback.
+
+\section{Surveillance and Monitoring}
+Surveillance systems sometimes analyse video at reduced temporal rates when the scene changes slowly or when processing resources are limited. Missing frames can also mean that short events are not observed. The project provides a simple visual explanation of this trade-off, but it is not intended as a design recommendation for safety-critical monitoring systems.
+
+\section{Remote Viewing and Low-Bandwidth Systems}
+When network bandwidth is limited, a system may reduce the frame rate to maintain a manageable data stream. This can preserve broad scene context but reduce the detail of fast motion. Reconstruction can improve presentation but cannot reliably recreate an event that was never sampled. The experiment illustrates why frame-rate reduction must be considered alongside the purpose of the video.
+
+\section{Education and Demonstration}
+The most direct application of FRAMEFLOW is educational. It provides visible examples for a DSP laboratory discussion and allows students to connect equations with real media. It can support classroom explanations of discrete-time sequences, sample selection, interpolation, and error metrics.
+
+\chapter{Testing and Verification}
+\section{Purpose of Testing}
+Testing confirms that the program has created valid files and that the results correspond to the intended operations. A file existing in the workspace does not by itself prove that its contents are correct. Playback, frame counts, metadata, and a small number of frame-by-frame checks should be used to verify the outputs.
+
+\section{Suggested Test Cases}
+\begin{longtable}{p{0.16\textwidth}p{0.36\textwidth}p{0.36\textwidth}}
+\toprule
+\textbf{Test} & \textbf{Procedure} & \textbf{Expected check}\\
+\midrule
+T1 & Open the source video & Reader opens and frames can be decoded\\
+T2 & Run sampling with factor greater than one & Sampled sequence contains fewer retained frames\\
+T3 & Open sampled AVI & File plays without corruption\\
+T4 & Open ZOH reconstruction & Repeated-frame behaviour is observable where expected\\
+T5 & Open linear reconstruction & Intermediate blends are visible between retained samples\\
+T6 & Inspect frame dimensions & Compared frames have matching dimensions\\
+T7 & Compare identical frame to itself & MSE is zero or numerically negligible\\
+T8 & Verify temporal correspondence & Each reconstruction frame is mapped to the correct reference time\\
+T9 & Inspect CSV output & Headers and values are readable and consistent\\
+T10 & Reopen MATLAB session outputs & Saved files remain accessible\\
+\bottomrule
+\end{longtable}
+
+\section{Verification of Numerical Error}
+Before using an MSE plot in a final presentation, verify that the code compares frames from the same time positions. Check whether indexing begins at one or zero, whether the final frame is included, and whether repeated or interpolated frames are compared with the correct original timestamps. Use the same data range and image dimensions for each method. If any of these conditions are not met, the table should be corrected before interpretation.
+
+\section{Known Implementation Risks}
+Potential risks include inconsistent frame indexing, writer profiles unsupported by the environment, a mismatch between input and output frame rates, incomplete output files when writers are not closed, integer arithmetic during interpolation, and excessive memory use. These risks can be mitigated through incremental processing, simple test runs, explicit output names, and validation of saved data.
+
+\chapter{Conclusion}
+FRAMEFLOW demonstrates temporal sampling and two basic reconstruction approaches for digital video using MATLAB. The workflow reads a source video, retains frames at selected intervals, creates a sampled sequence, and generates reconstructed outputs using Zero-Order Hold and linear interpolation. These methods illustrate different compromises: ZOH is simple but can create repeated-frame pauses, while linear interpolation produces blended intermediate frames that may look smoother but can introduce blur or ghosting.
+
+The project also demonstrates why quantitative evaluation requires care. MSE can summarise pixel-wise differences, but it is meaningful only when corresponding frames are aligned and represented consistently. Visual inspection remains important because a single numerical score cannot fully describe motion continuity or perceived quality. The report's final numerical claims should be populated only after the saved tables and frame-indexing logic have been verified.
+
+Overall, the project provides a practical link between discrete-time signal processing theory and digital video. It offers a foundation for future work involving multiple sampling factors, more test videos, motion-aware interpolation, and a more rigorous evaluation framework.
+
+\chapter{Future Scope}
+Possible extensions include comparing several sampling factors, evaluating clips with different motion speeds, adding a graphical user interface for selecting the input video and sampling factor, and displaying frame-by-frame comparisons. More advanced work could explore motion-compensated interpolation or optical-flow-based methods. Additional quality measures could be included, provided that their assumptions are understood and their calculations are implemented correctly. A future version could also export a compact experiment summary containing settings, metadata, and verified metrics.
+
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
+\begin{enumerate}[leftmargin=*]
+\item A. V. Oppenheim and R. W. Schafer, \textit{Discrete-Time Signal Processing}, 3rd ed., Pearson, 2010.
+\item S. K. Mitra, \textit{Digital Signal Processing: A Computer-Based Approach}, 4th ed., McGraw-Hill, 2011.
+\item MATLAB Documentation, “VideoReader,” MathWorks. Available at: \url{https://www.mathworks.com/help/matlab/ref/videoreader.html}.
+\item MATLAB Documentation, “VideoWriter,” MathWorks. Available at: \url{https://www.mathworks.com/help/matlab/ref/videowriter.html}.
+\item MATLAB Documentation, “Image Processing and Pixel Arithmetic,” MathWorks documentation portal. Available at: \url{https://www.mathworks.com/help/}.
+\end{enumerate}
+
+\appendix
+\chapter{Project File Inventory}
+The following inventory is based on the files reported as present during development. Confirm each file in MATLAB Online before final submission.
+\begin{longtable}{p{0.52\textwidth}p{0.34\textwidth}}
+\toprule
+\textbf{Filename} & \textbf{Role}\\
+\midrule
+\texttt{frameflow.m} & Main project script\\
+\texttt{frameflowbackup.m} & Backup version of the main script\\
+\texttt{frameflow\_playback\_save.m} & Playback or saving workflow\\
+\texttt{frameflow\_sampling.m} & Sampling experiment script\\
+\texttt{street.mp4} & Source video\\
+\texttt{FRAMEFLOW\_Original.avi} & Reference video copy, if generated\\
+\texttt{FRAMEFLOW\_Sampled.avi} & Sampled video\\
+\texttt{FRAMEFLOW\_ZOH\_Reconstructed.avi} & ZOH output\\
+\texttt{FRAMEFLOW\_Linear\_Reconstructed.avi} & Linear interpolation output\\
+\texttt{FRAMEFLOW\_Original\_vs\_Sampled.png} & Original/sampled plot\\
+\texttt{FRAMEFLOW\_FrameCount\_Comparison.png} & Frame-count plot\\
+\texttt{FRAMEFLOW\_Sampling\_Results.csv} & Sampling results\\
+\texttt{FRAMEFLOW\_Sampling\_Data.mat} & Sampling data\\
+\texttt{FRAMEFLOW\_Reconstruction\_Results.csv} & Reconstruction results\\
+\texttt{FRAMEFLOW\_Reconstruction\_Data.mat} & Reconstruction data\\
+\texttt{FRAMEFLOW\_Reconstruction\_MSE.png} & MSE plot, pending verification\\
+\bottomrule
+\end{longtable}
+
+\chapter{Algorithm Summary}
+\section*{Temporal Sampling}
+\begin{enumerate}[leftmargin=*]
+\item Open the source video.
+\item Read one frame at a time.
+\item Keep frames that satisfy the selected sampling interval.
+\item Write retained frames to the sampled output.
+\item Close the writer and check that the output can be played.
+\end{enumerate}
+
+\section*{Zero-Order Hold}
+\begin{enumerate}[leftmargin=*]
+\item Read the retained sample frames in order.
+\item Repeat each retained frame over its associated interval.
+\item Handle the final interval without indexing beyond the available frames.
+\item Write and close the output video.
+\end{enumerate}
+
+\section*{Linear Interpolation}
+\begin{enumerate}[leftmargin=*]
+\item Select two consecutive retained frames, $A$ and $B$.
+\item Choose intermediate weights $\alpha$ between zero and one.
+\item Calculate each blended frame using $(1-\alpha)A+\alpha B$.
+\item Convert the blended frame to a valid image data type.
+\item Write the output in chronological order and verify playback.
+\end{enumerate}
+
+\chapter{Final Submission Checklist}
+\begin{itemize}[leftmargin=*]
+\item Replace or remove every placeholder figure box.
+\item Upload the actual project plots to Overleaf using the filenames in this report, or change the filenames in the source.
+\item Upload the official CBIT logo as \texttt{cbit\_logo.png} if you want it displayed on the cover page.
+\item Verify the source video name, sampling factor, input/output frame rates, and frame counts.
+\item Check that the sampled and reconstructed AVI files play correctly.
+\item Validate frame alignment before entering any MSE values.
+\item Replace bracketed entries in tables with verified results or remove the table if results are unavailable.
+\item Confirm the subject code and supervisor details match the instructions from the department.
+\item Ensure that the final PDF has at least 20 pages and that all figures and tables are readable.
+\item Review the report and remove any statement that does not match the experiment actually performed.
+\end{itemize}
+
+\end{document}
