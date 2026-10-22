@@ -18,6 +18,7 @@ Interpolation estimates intermediate pixel values; it does not recover scene inf
 
 - `FRAMEFLOW.m` — main MATLAB analysis script.
 - `FRAMEFLOW_Project_Report.tex` — editable LaTeX source for the academic report.
+- `scripts/FRAMEFLOW_Analysis_Comparison.m` — compares decimation factors 2, 5, and 10 with reconstruction plots and pixel-intensity analysis.
 - `scripts/FRAMEFLOW_Playback.m` — standalone original-video preview and export.
 - `scripts/FRAMEFLOW_Sampling.m` — standalone temporal-sampling workflow.
 - `scripts/FRAMEFLOW_Reconstruction.m` — standalone ZOH/linear reconstruction and MSE comparison.
