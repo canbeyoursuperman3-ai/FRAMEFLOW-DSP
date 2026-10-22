@@ -126,29 +126,31 @@ while hasFrame(reader)
 end
 
 % Handle the final partial interval by holding the last retained frame.
-if ~isempty(previousSample) && numel(intervalFrames) > 1
-    for k = 1:numel(intervalFrames)-1
-        originalFrame = intervalFrames{k};
-        zohFrame = previousSample;
-        writeVideo(zohWriter, zohFrame);
-        writeVideo(linearWriter, zohFrame);
-        zohCount = zohCount + 1;
-        linearCount = linearCount + 1;
-
-        err = double(originalFrame) - double(zohFrame);
-        tailError = sum(err(:).^2);
-        zohSquaredError = zohSquaredError + tailError;
-        linearSquaredError = linearSquaredError + tailError;
-        zohPixelCount = zohPixelCount + numel(err);
-        linearPixelCount = linearPixelCount + numel(err);
-    end
-end
-
 if ~isempty(previousSample)
+    % Write the final retained frame at its own timestamp.
     writeVideo(zohWriter, previousSample);
     writeVideo(linearWriter, previousSample);
     zohCount = zohCount + 1;
     linearCount = linearCount + 1;
+
+    % Any remaining frames have no later retained sample to blend toward,
+    % so both methods hold the final retained frame for this tail.
+    if numel(intervalFrames) > 1
+        for k = 2:numel(intervalFrames)
+            originalFrame = intervalFrames{k};
+            writeVideo(zohWriter, previousSample);
+            writeVideo(linearWriter, previousSample);
+            zohCount = zohCount + 1;
+            linearCount = linearCount + 1;
+
+            err = double(originalFrame) - double(previousSample);
+            tailError = sum(err(:).^2);
+            zohSquaredError = zohSquaredError + tailError;
+            linearSquaredError = linearSquaredError + tailError;
+            zohPixelCount = zohPixelCount + numel(err);
+            linearPixelCount = linearPixelCount + numel(err);
+        end
+    end
 end
 
 closeWriters(sampledWriter, zohWriter, linearWriter);
