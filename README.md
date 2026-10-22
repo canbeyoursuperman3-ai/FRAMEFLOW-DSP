@@ -1,60 +1,70 @@
-# FRAMEFLOW — Temporal Sampling and Video Reconstruction
+# FRAMEFLOW — Temporal Sampling, Aliasing, and Video Reconstruction
 
-**Digital Signal Processing Laboratory | MATLAB**
+**Digital Signal Processing Laboratory | MATLAB | CBIT (A), ECE**
 
-FRAMEFLOW is an educational MATLAB project that makes temporal sampling visible by reducing the number of frames in a video and comparing two simple reconstruction methods:
+FRAMEFLOW is an educational MATLAB project for studying temporal sampling in digital video and comparing two reconstruction methods: Zero-Order Hold (ZOH) and linear interpolation.
 
-- **Temporal sampling:** retains one frame every M frames.
-- **Zero-Order Hold (ZOH):** repeats the most recently retained frame.
+## Project overview
+
+- **Temporal sampling:** retains selected frames from the original sequence.
+- **Zero-Order Hold (ZOH):** repeats a retained frame until the next sample.
 - **Linear interpolation:** blends adjacent retained frames to estimate intermediate frames.
-- **Evaluation:** records output frame counts and computes pixel-wise mean squared error (MSE) against corresponding source frames processed by the script.
+- **Evaluation:** compares original and reconstructed frames using pixel-wise mean squared error (MSE), alongside visual and frame-rate comparisons.
+- **Aliasing context:** demonstrates the consequences of reducing temporal samples; conclusions about aliasing should be tied to the observations and results recorded in the project report.
 
-The purpose is to illustrate how fewer temporal samples affect motion continuity and how simple reconstruction methods differ. Interpolation estimates missing frames; it does not recover scene information that was never observed.
+Interpolation estimates intermediate pixel values; it does not recover scene information that was never sampled.
 
 ## Repository contents
 
-- FRAMEFLOW.m — main MATLAB script.
-- FRAMEFLOW_Project_Report.tex — editable LaTeX report draft.
-- docs/IMPLEMENTATION_NOTES.md — workflow, assumptions, and verification notes.
-- Generated outputs are written to FRAMEFLOW_Output/ when the script is run. Large videos and generated results are intentionally not committed to this repository.
+- `FRAMEFLOW.m` — main MATLAB analysis script.
+- `FRAMEFLOW_Project_Report.tex` — editable LaTeX source for the academic report.
+- `scripts/FRAMEFLOW_Playback.m` — standalone original-video preview and export.
+- `scripts/FRAMEFLOW_Sampling.m` — standalone temporal-sampling workflow.
+- `scripts/FRAMEFLOW_Reconstruction.m` — standalone ZOH/linear reconstruction and MSE comparison.
+- `docs/PROJECT_GUIDE.md` — project workflow, inputs, outputs, and interpretation.
+- `docs/IMPLEMENTATION_NOTES.md` — implementation assumptions and validation notes.
+
+Generated videos and experiment-specific output files are not committed by default, keeping the repository lightweight. Keep your verified result files alongside your final report or submission package when required.
 
 ## Run in MATLAB Online
 
-1. Download FRAMEFLOW.m from this repository.
-2. Upload the script and a video file to MATLAB Online. The default input name is street.mp4; edit inputFile near the top of the script if your video has a different name.
-3. Run FRAMEFLOW.m.
-4. Open the FRAMEFLOW_Output folder and inspect the AVI files, PNG plots, CSV summary, and MAT data.
+The scripts expect a source video named `street.mp4` in the MATLAB Current Folder unless the input filename is changed in the relevant script.
 
-The script uses the **Motion JPEG AVI** writer profile. Codec availability can vary by MATLAB environment.
+For the standalone workflow:
 
-## Main output files
+1. Upload `street.mp4` and the scripts to MATLAB Online.
+2. Run `scripts/FRAMEFLOW_Playback.m` if you want to preview and export the source video.
+3. Run `scripts/FRAMEFLOW_Sampling.m` to create `FRAMEFLOW_Sampled.avi` and sampling results.
+4. Run `scripts/FRAMEFLOW_Reconstruction.m` after the sampled video has been created.
+5. Run `FRAMEFLOW.m` for the main consolidated analysis.
 
-- FRAMEFLOW_Sampled.avi
-- FRAMEFLOW_ZOH_Reconstructed.avi
-- FRAMEFLOW_Linear_Reconstructed.avi
-- FRAMEFLOW_FrameCount_Comparison.png
-- FRAMEFLOW_Reconstruction_MSE.png (when interval data is available)
-- FRAMEFLOW_Sampling_Results.csv
-- FRAMEFLOW_Sampling_Data.mat
+The scripts use MATLAB video-reading/writing functions and the Motion JPEG AVI profile. Available codecs and performance can vary by MATLAB environment. Run scripts from the folder containing the input video and keep outputs from different runs separate if you need to preserve them.
 
-## Parameters
+## Typical generated outputs
 
-At the beginning of FRAMEFLOW.m:
+Depending on which script you run, outputs include:
 
-- inputFile: path/name of the input video.
-- samplingFactor: integer of 2 or greater; larger values retain fewer frames.
+- `FRAMEFLOW_Original.avi`
+- `FRAMEFLOW_Sampled.avi`
+- `FRAMEFLOW_ZOH_Reconstructed.avi`
+- `FRAMEFLOW_Linear_Reconstructed.avi`
+- `FRAMEFLOW_FrameCount_Comparison.png`
+- `FRAMEFLOW_Original_vs_Sampled.png`
+- `FRAMEFLOW_Reconstruction_MSE.png`
+- `FRAMEFLOW_Sampling_Results.csv`
+- `FRAMEFLOW_Reconstruction_Results.csv`
+- MAT files containing numerical data and processing variables.
 
-## Important interpretation notes
+## Interpretation notes
 
-- The input video is not included. Use a video file that you have permission to process.
-- MSE is meaningful only for correctly aligned frames of the same dimensions and pixel representation. Here, the script calculates it interval by interval against source frames held in the current interval buffer. Review indexing and output durations for your chosen video before quoting numerical conclusions.
-- ZOH intentionally produces repeated frames. Linear interpolation can create blur or ghosting because it blends pixels without modelling object motion.
-- Generated plots and numerical values should be produced by running the script; this repository does not claim that any specific numerical result has already been experimentally verified.
+- Larger sampling factors retain fewer frames and reduce the effective frame rate.
+- ZOH produces repeated frames and may appear jerky during motion.
+- Linear interpolation blends pixels between adjacent samples and may introduce blur or ghosting because it does not model object motion.
+- MSE is meaningful only when the original and reconstructed frames are aligned and have matching dimensions and pixel representation. It is a numerical error measure, not a complete measure of perceived video quality.
+- Use the numerical values from your actual MATLAB run in the final report; do not replace measured results with example values.
 
-## Project report
+## Report and reproducibility
 
-The LaTeX file is an editable report draft. Before academic submission, review it against the final code and actual generated outputs, replace any figure placeholders, and verify every result and claim.
+The report source is editable LaTeX. Review it together with the actual generated figures, CSV tables, and video outputs before submission. If compiling the report in Overleaf, upload any referenced figures and the official institute logo that you intend to display.
 
-## Reproducibility
-
-This repository is intended for educational demonstration. Keep the input video and generated outputs separate from the source code so the experiment can be rerun with a different clip.
+For a fuller workflow and file guide, see [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md).
